@@ -13,7 +13,7 @@ function readDirRecursively(base, level) {
         if (error) {
             console.log("This directory doesn't exist")
             throw error;
-        };
+        }
 
         files.forEach(file => {
             const firstLetter = file[0].toUpperCase();
