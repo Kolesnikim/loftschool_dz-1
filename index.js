@@ -1,12 +1,40 @@
 const fs = require('fs');
 const path = require('path');
 
-const customDir = process.argv[2] ?? 'source';
-const newCustomDir = process.argv[3] ?? 'new-source';
-const deleteSource = process.argv[4] ?? true;
+const yargs = require('yargs');
 
-const base = path.join(__dirname, customDir);
-const newBase = path.join(__dirname,  newCustomDir);
+const argv = yargs
+    .usage('Usage: node $0 [options]')
+    .help('help')
+    .alias('help', 'h')
+    .version('0.0.1')
+    .alias('version', 'v')
+    .example('node $0 -e [path] -o [path] -D')
+    .option('entry', {
+        alias: 'e',
+        describe: 'Путь к читаемой папке',
+        demandOption: true
+    })
+    .option('output', {
+        alias: 'o',
+        describe: 'Путь к итоговой папке',
+        default: './output'
+    })
+    .option('delete', {
+        alias: 'D',
+        describe: 'Удалить исходню директорию?',
+        type: 'boolean',
+        default: false
+    })
+    .epilog('application')
+    .argv;
+
+const paths = {
+    src: path.normalize(path.resolve(__dirname, argv.entry)),
+    dist: path.normalize(path.resolve(__dirname, argv.output))
+}
+
+const deleteSource = argv.delete;
 
 function readDirRecursively(base, level) {
     fs.readdir(base, (error, files) => {
@@ -18,10 +46,10 @@ function readDirRecursively(base, level) {
         files.forEach(file => {
             const firstLetter = file[0].toUpperCase();
 
-            fs.mkdir(path.join(newBase, firstLetter), {recursive: true}, (error) => {
+            fs.mkdir(path.join(paths.dist, firstLetter), {recursive: true}, (error) => {
                 if (error) throw error;
 
-                const futureLocation = path.join(newCustomDir, firstLetter, file)
+                const futureLocation = path.join(paths.dist, firstLetter, file)
                 const currentLocation = path.join(base, file);
 
                 fs.stat(currentLocation, (error, state) => {
@@ -32,8 +60,7 @@ function readDirRecursively(base, level) {
                     } else {
                         fs.copyFile(currentLocation, futureLocation, (error) => {
                             if (error) throw error;
-
-                            if (eval(deleteSource)) {
+                            if (deleteSource) {
                                 fs.unlink(currentLocation,() => {
                                     fs.rmdir(base, {recursive: true}, (err) => {
                                         if (err) throw err
@@ -48,5 +75,4 @@ function readDirRecursively(base, level) {
     });
 }
 
-readDirRecursively(base, 0)
-
+readDirRecursively(paths.src, 0)
