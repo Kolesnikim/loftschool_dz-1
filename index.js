@@ -44,20 +44,21 @@ function readDirRecursively(base, level) {
         }
 
         files.forEach(file => {
-            const firstLetter = file[0].toUpperCase();
+            const currentLocation = path.join(base, file);
 
-            fs.mkdir(path.join(paths.dist, firstLetter), {recursive: true}, (error) => {
+            fs.stat(currentLocation, (error, state) => {
                 if (error) throw error;
 
-                const futureLocation = path.join(paths.dist, firstLetter, file)
-                const currentLocation = path.join(base, file);
+                if (state.isDirectory()) {
+                    readDirRecursively(currentLocation, level + 1)
+                } else {
+                    const firstLetter = file[0].toUpperCase();
 
-                fs.stat(currentLocation, (error, state) => {
-                    if (error) throw error;
+                    fs.mkdir(path.join(paths.dist, firstLetter), {recursive: true}, (error) => {
+                        if (error) throw error;
 
-                    if (state.isDirectory()) {
-                        readDirRecursively(currentLocation, level + 1)
-                    } else {
+                        const futureLocation = path.join(paths.dist, firstLetter, file)
+
                         fs.copyFile(currentLocation, futureLocation, (error) => {
                             if (error) throw error;
                             if (deleteSource) {
@@ -68,8 +69,8 @@ function readDirRecursively(base, level) {
                                 });
                             }
                         })
-                    }
-                });
+                    });
+                }
             });
         })
     });
